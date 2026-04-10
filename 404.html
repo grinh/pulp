@@ -5,7 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PulpCthulhuApp</title>
-    <base href="/pulp" />
+    <script type="text/javascript">
+        // Jeśli adres zawiera "localhost", użyj "/", w przeciwnym razie użyj "/pulp/"
+        var base = document.location.hostname === 'localhost' ? '/' : '/pulp/';
+        document.write('<base href="' + base + '" />');
+    </script>
     <link href="_framework/dotnet.wxgrbma4ao.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-fM5ui4aEA8GVeMlSHattUc6Y17eBjC9KQUtDz6tQg/s=" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
