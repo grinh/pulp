@@ -1,1 +1,1 @@
-# pulpcth.github.io
+# Easy pulp cth character creator. Point buy method
