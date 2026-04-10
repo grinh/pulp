@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulp Cthulhu - Kreator Postaci v1.10</title>
+<style>
+  :root {
+    --bg-color: #1a1a1a;
+    --panel-bg: #2a2a2a;
+    --text-main: #d4d4d4;
+    --accent: #e0a96d;
+    --good: #a3d9a5;
+    --arch-color: #9d7bd8;
+    --occ-color: #5c9bcf;
+    --danger: #ff6b6b;
+    --tag-color: #888;
+  }
+  
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: var(--bg-color); 
+    color: var(--text-main); 
+    padding: 20px; 
+    margin: 0;
+  }
+  
+  .container { 
+    max-width: 1300px; 
+    margin: 0 auto; 
+    background: var(--panel-bg); 
+    padding: 30px; 
+    border-radius: 10px; 
+    box-shadow: 0 5px 25px rgba(0,0,0,0.8); 
+  }
+  
+  h1 { text-align: center; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+  h2 { color: var(--accent); font-size: 1.3em; margin-top: 0; }
+  
+  .tools-header { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+  .btn { padding: 10px 20px; background: var(--accent); color: #111; border: none; border-radius: 5px; font-weight: bold; font-size: 1em; cursor: pointer; transition: 0.2s; }
+  .btn:hover { background: #d0985c; transform: translateY(-2px); }
+  .btn-outline { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+  .btn-outline:hover { background: rgba(224, 169, 109, 0.1); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; }
+  
+  .sticky-header { position: sticky; top: 0; background: var(--panel-bg); padding-bottom: 15px; z-index: 10; border-bottom: 1px solid #444; margin-bottom: 15px; }
+
+  .pool-display { font-size: 1.1em; color: var(--good); background: #111; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #333; margin-bottom: 15px;}
+  .pool-display span { font-weight: bold; font-size: 1.2em; }
+  .pool-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  
+  .box { background: #1a1a1a; padding: 15px; border: 1px solid #444; border-radius: 6px; margin-bottom: 20px; }
+  select { width: 100%; padding: 10px; background: #333; color: white; border: 1px solid var(--accent); border-radius: 4px; font-size: 1.1em; margin-bottom: 10px;}
+  .desc { font-size: 0.9em; line-height: 1.5; color: #bbb; }
+  .desc-accent { color: var(--accent); display: block; margin-top: 8px; font-weight: bold; font-size: 0.9em; }
+  .desc-occ { color: var(--occ-color); display: block; margin-top: 8px; font-weight: bold; font-size: 0.9em; }
+  
+  .occ-choice-box { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #555; }
+  .occ-choice-box label { font-size: 0.9em; color: var(--occ-color); display: block; margin-bottom: 5px; }
+  .occ-choice-box select { margin-bottom: 0; border-color: var(--occ-color); }
+
+  .mode-selector { background: #111; padding: 10px; border-radius: 6px; display: flex; justify-content: space-around; border: 1px solid var(--accent); margin-bottom: 20px;}
+  .mode-selector label { cursor: pointer; font-weight: bold; font-size:0.9em;}
+  .mode-selector input[type="radio"] { accent-color: var(--accent); transform: scale(1.2); margin-right: 5px;}
+
+  .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; background: #333; padding: 8px 15px; border-radius: 5px; }
+  .special-row { border: 2px solid var(--accent); background: #222;}
+  
+  .skill-label { display: flex; flex-direction: column; }
+  .skill-name { font-size: 0.95em; }
+  .skill-meta { font-size: 0.8em; color: var(--tag-color); margin-top: 2px; }
+
+  .tag { color: #b08d5c; font-style: italic; font-weight: normal; }
+  .tag-arch { color: var(--arch-color); font-weight: bold; font-style: normal; }
+  .tag-occ { color: var(--occ-color); font-weight: bold; font-style: normal; }
+
+  .input-wrapper { display: flex; flex-direction: column; align-items: flex-end; }
+  input[type="number"] { width: 70px; padding: 6px; background: #1a1a1a; color: white; border: 1px solid #555; border-radius: 4px; font-size: 1.1em; text-align: center;}
+  
+  .spent-breakdown { font-size: 0.7em; color: #888; margin-top: 4px; }
+  .spent-z { color: var(--good); }
+  .spent-a { color: var(--arch-color); }
+  .spent-w { color: var(--occ-color); }
+
+  .warning { color: var(--danger) !important; border-color: var(--danger) !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Pulp Cthulhu - Budowa Postaci</h1>
+
+  <div class="tools-header">
+    <button class="btn" onclick="exportData()">💾 Eksportuj do JSON</button>
+    <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">📂 Importuj z JSON</button>
+    <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="box">
+        <h2>Archetyp</h2>
+        <select id="archetype-select">
+          <option value="none">-- Wybierz Archetyp --</option>
+          <option value="autsajder">Autsajder</option>
+          <option value="awanturnik">Awanturnik</option>
+          <option value="bezwzgledny">Bezwzględny</option>
+          <option value="bojownik">Bojownik o sprawę</option>
+          <option value="bonvivant">Bon vivant</option>
+          <option value="buntownik">Buntownik</option>
+          <option value="femmefatale">Femme fatale</option>
+          <option value="intrygant">Intrygant</option>
+          <option value="lowca">Łowca</option>
+          <option value="marzyciel">Marzyciel</option>
+          <option value="mistyk">Mistyk</option>
+          <option value="mozgowiec">Mózgowiec</option>
+          <option value="odkrywca">Odkrywca</option>
+          <option value="osilek">Osiłek</option>
+          <option value="pomagier">Pomagier</option>
+          <option value="poszukiwacz">Poszukiwacz prawdy</option>
+          <option value="smialek">Śmiałek</option>
+          <option value="twardasztuka">Twarda sztuka</option>
+          <option value="uczony">Uczony</option>
+          <option value="zabijaka">Zabijaka</option>
+          <option value="zawadiaka">Zawadiaka</option>
+          <option value="zlotaraczka">Złota rączka</option>
+        </select>
+        <div id="archetype-desc" class="desc">Brak (0 pkt)</div>
+      </div>
+
+      <div class="box">
+        <h2>Zawód</h2>
+        <select id="occup-select">
+          <option value="none">-- Wybierz Zawód --</option>
+          <option value="agent">Agent federalny</option>
+          <option value="aktor_film">Aktor (filmowy)</option>
+          <option value="aktor_scena">Aktor (sceniczny/radiowy)</option>
+          <option value="archeolog">Archeolog</option>
+          <option value="artysta">Artysta</option>
+          <option value="artysta_estr">Artysta estradowy</option>
+          <option value="atleta">Atleta</option>
+          <option value="barman">Barman/Kelnerka</option>
+          <option value="bibliotekarz">Bibliotekarz</option>
+          <option value="bogaty">Bogaty hobbysta</option>
+          <option value="bokser">Bokser/Zapaśnik</option>
+          <option value="chuligan">Chuligan</option>
+          <option value="plemienny">Człowiek plemienny</option>
+          <option value="detektyw_ag">Detektyw agencji</option>
+          <option value="detektyw_pol">Detektyw policyjny</option>
+          <option value="duchowny">Duchowny</option>
+          <option value="dzialacz">Działacz związkowy</option>
+          <option value="dziennikarz">Dziennikarz śledczy</option>
+          <option value="dziewczyna">Dziewczyna gangstera</option>
+          <option value="dzentelmen">Dżentelmen/Dama</option>
+          <option value="egzorcysta">Egzorcysta</option>
+          <option value="fanatyk">Fanatyk</option>
+          <option value="fotograf">Fotograf</option>
+          <option value="urzednik">Funkcjonariusz publiczny</option>
+          <option value="gangster_pod">Gangster, Podwładny</option>
+          <option value="gangster_szef">Gangster, Przywódca gangu</option>
+          <option value="gliniarz">Gliniarz</option>
+          <option value="hazardzista">Hazardzista</option>
+          <option value="inzynier">Inżynier</option>
+          <option value="jogin">Jogin</option>
+          <option value="lokaj">Kamerdyner/Lokaj/Pokojówka</option>
+          <option value="kasiarz">Kasiarz</option>
+          <option value="kierowca">Kierowca ucieczkowy</option>
+          <option value="lekarz">Lekarz</option>
+          <option value="lotnik">Lotnik</option>
+          <option value="lowca_zwierz">Łowca grubego zwierza</option>
+          <option value="lowca_nagrod">Łowca nagród</option>
+          <option value="marynarz">Marynarz</option>
+          <option value="mechanik">Mechanik</option>
+          <option value="misjonarz">Misjonarz</option>
+          <option value="muzyk">Muzyk</option>
+          <option value="naukowiec">Naukowiec</option>
+          <option value="odkrywca">Odkrywca</option>
+          <option value="oficer">Oficer wojskowy</option>
+          <option value="okultysta">Okultysta</option>
+          <option value="oszust">Oszust</option>
+          <option value="parapsycholog">Parapsycholog</option>
+          <option value="pielegniarka">Pielęgniarka</option>
+          <option value="pisarz">Pisarz</option>
+          <option value="zbir">Płatny zbir</option>
+          <option value="tymczasowy">Pracownik tymczasowy</option>
+          <option value="profesor">Profesor</option>
+          <option value="prostytutka">Prostytutka</option>
+          <option value="prywatny">Prywatny detektyw</option>
+          <option value="przestepca">Przestępca</option>
+          <option value="przywodca_kultu">Przywódca kultu</option>
+          <option value="reporter">Reporter</option>
+          <option value="robotnik">Robotnik</option>
+          <option value="sekretarka">Sekretarz/Sekretarka</option>
+          <option value="straznik">Strażnik leśny</option>
+          <option value="student">Student/Stażysta</option>
+          <option value="szofer">Szofer</option>
+          <option value="szpieg">Szpieg</option>
+          <option value="tramp">Tramp</option>
+          <option value="wlamywacz">Włamywacz</option>
+          <option value="wloczega">Włóczęga</option>
+          <option value="zabojca">Zabójca</option>
+          <option value="zolnierz">Żołnierz</option>
+        </select>
+        <div id="occup-desc" class="desc">Brak zawodowych pkt.</div>
+        
+        <div id="occ-choice-box" class="occ-choice-box" style="display: none;">
+          <label>Z jakiej cechy wyliczyć pulę?</label>
+          <select id="occ-stat-select"></select>
+        </div>
+      </div>
+
+      <h2>Cechy (Point Buy)</h2>
+      <div class="pool-display" id="char-pool-container">
+        Pozostałe punkty cech: <span id="char-points">500</span>
+      </div>
+      <div id="characteristics-list"></div>
+
+      <h2>Specjalne</h2>
+      <div class="stat-row special-row">
+        <div class="skill-label">
+          <label class="skill-name">Majętność (CR)</label>
+          <span class="skill-meta" id="cr-meta">Wymagane: 0 - 99</span>
+        </div>
+        <div class="input-wrapper">
+          <input type="number" id="cr-input" value="0" min="0" max="99">
+          <div class="spent-breakdown">Z: <span id="cr-z">0</span> | W: <span id="cr-w">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sticky-header">
+        <h2>Pule Punktów Umiejętności</h2>
+        <div class="pool-grid">
+          <div class="pool-display" id="skill-pool-container">
+            Zainteres. (2xINT)<br><span id="skill-points">0</span>/<span id="max-skill-points">0</span>
+          </div>
+          <div class="pool-display" id="arch-pool-container" style="border-color: var(--arch-color);">
+            Archetyp<br><span id="arch-points" style="color: var(--arch-color);">0</span>/<span id="max-arch-points">0</span>
+          </div>
+          <div class="pool-display" id="occ-pool-container" style="border-color: var(--occ-color);">
+            Zawód<br><span id="occ-points" style="color: var(--occ-color);">0</span>/<span id="max-occ-points">0</span>
+          </div>
+        </div>
+
+        <div class="mode-selector">
+          <label style="color: var(--good);"><input type="radio" name="spend-mode" value="interest" checked> [Z]ainteresowania</label>
+          <label style="color: var(--arch-color);"><input type="radio" name="spend-mode" value="archetype" id="mode-arch" disabled> [A]rchetyp</label>
+          <label style="color: var(--occ-color);"><input type="radio" name="spend-mode" value="occupation" id="mode-occ" disabled> Za[w]ód</label>
+        </div>
+      </div>
+      
+      <div id="skills-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const INTERPERSONAL = ['gadanina', 'perswazja', 'urok_osobisty', 'zastraszanie'];
+  const FIREARMS = ['bron_ciezka', 'bron_krotka', 'karabin_maszynowy', 'karabin_strzelba', 'luk', 'miotacz_ognia', 'pistolet_maszynowy'];
+  const MELEE = ['bicz', 'bijatyka', 'bron_obuchowa', 'garota', 'miecz', 'pila_lancuchowa', 'topor_siekiera', 'wlocznia'];
+  const SCIENCES = ['nauka', 'antropologia', 'archeologia', 'kryptografia'];
+  const SURVIVAL = ['sztuka_przetrwania'];
+  const ART = ['sztuka_rzemioslo', 'charakteryzacja'];
+  const PILOT = ['pilotowanie'];
+  const LANG = ['jezyk_obcy'];
+
+  const archetypes = {
+    "autsajder": { desc: "Autsajder żyje obok reszty społeczeństwa. Często ciągle w podróży, wykorzystuje tajemną lub obcą wiedzę, by osiągnąć swoje cele.", suggested: "Artysta, Człowiek plemienny, Odkrywca, Okultysta, Pielęgniarz/Pielęgniarka, Płatny zbir, Pracownik tymczasowy, Robotnik, Strażnik leśny, Tramp.", skills: [...LANG, 'medycyna', 'nasluchiwanie', 'nawigacja', 'pierwsza_pomoc', ...ART, ...SURVIVAL, 'tresura_zwierzat', 'tropienie', 'ukrywanie', ...MELEE, 'zastraszanie'] },
+    "awanturnik": { desc: "Świat jest ogromny i pełen okazji do okrycia się chwałą. Awanturnik pragnie emocji, rozrywki i coraz to nowych wyzwań.", suggested: "Aktor, Archeolog, Atleta, Bogaty hobbysta, Człowiek plemienny, Dziennikarz śledczy, Fotograf, Gangster, Hazardzista, Kasiarz, Lotnik, Łowca grubego zwierza, Marynarz, Misjonarz, Pielęgniarz/Pielęgniarka, Strażnik leśny, Tramp, Włamywacz, Włóczęga, Żołnierz.", skills: [...FIREARMS, 'jezdziectwo', ...LANG, 'mechanika', 'nurkowanie', 'pierwsza_pomoc', ...PILOT, 'plywanie', 'prowadzenie_samochodu', 'skakanie', ...SURVIVAL, 'ukrywanie', ...MELEE, 'wspinaczka'] },
+    "bezwzgledny": { desc: "Człowiek racjonalny zdolny do praktycznie wszystkiego. Chłodne, ponure spojrzenie na ludzkość. Jeśli poweźmie cel, nie cofnie się przed niczym.", suggested: "Agent federalny, Chuligan, Człowiek plemienny, Dziewczyna gangstera, Egzorcysta, Fanatyk, Gangster, Gliniarz, Kasiarz, Łowca nagród, Płatny zbir, Profesor, Przywódca kultu, Reporter, Tramp, Zabójca, Żołnierz.", skills: [...FIREARMS, 'charakteryzacja', 'historia', 'mechanika', 'nasluchiwanie', 'pierwsza_pomoc', 'prawo', 'psychologia', ...ART, ...SURVIVAL, 'tropienie', 'ukrywanie', ...MELEE, 'zastraszanie'] },
+    "bojownik": { desc: "Poczucie sprawiedliwości ma we krwi. Silny kompas moralny, chroni słabszych i stawia dobro innych ponad swoje własne.", suggested: "Agent federalny, Atleta, Człowiek plemienny, Detektyw policyjny, Duchowny, Dżentelmen/Dama, Egzorcysta, Funkcjonariusz publiczny, Gliniarz, Lekarz, Lokaj, Marynarz, Misjonarz, Pielęgniarka, Prywatny detektyw, Reporter, Szofer, Żołnierz.", skills: ['bron_krotka', 'historia', 'jezdziectwo', 'ksiegowosc', 'nawigacja', 'perswazja', 'pierwsza_pomoc', 'prawo', 'prowadzenie_samochodu', 'psychologia', 'spostrzegawczosc', ...SURVIVAL, ...MELEE, 'wiedza_o_naturze', 'zastraszanie'] },
+    "bonvivant": { desc: "Lubi i umie się bawić, korzysta z życia na całego i nie dba o konsekwencje. Dusza towarzystwa, zawsze w centrum uwagi.", suggested: "Aktor, Artysta, Artysta estradowy, Bogaty hobbysta, Duchowny, Dziewczyna gangstera, Dżentelmen/Dama, Fanatyk, Funkcjonariusz publiczny, Hazardzista, Lokaj, Muzyk, Oficer wojskowy, Oszust, Profesor, Przywódca kultu.", skills: ['gadanina', ...LANG, 'nasluchiwanie', 'psychologia', 'spostrzegawczosc', ...ART, 'urok_osobisty', 'wycena'] },
+    "buntownik": { desc: "Szydzący z konwenansów nonkonformista, otwarcie kwestionujący władzę. Bawi go robienie rzeczy wprawiających innych w zakłopotanie.", suggested: "Artysta, Artysta estradowy, Bogaty hobbysta, Hazardzista, Kasiarz, Kierowca ucieczkowy, Oszust, Student, Szpieg, Włamywacz.", skills: ['charakteryzacja', 'czytanie_z_ruchu_warg', 'gadanina', 'prawo', 'psychologia', 'spostrzegawczosc', ...ART, 'slusarstwo', 'ukrywanie', 'urok_osobisty', 'wycena'] },
+    "femmefatale": { desc: "Śmiertelnie niebezpieczna(y), oszałamiająco piękna(y) i samolubna(y). Tka lepką sieć i precyzyjnie uderza w swoje ofiary.", suggested: "Agent federalny, Aktor, Artysta estradowy, Bogaty hobbysta, Detektyw agencji, Dziennikarz śledczy, Dziewczyna gangstera, Fanatyk, Funkcjonariusz publiczny, Gangster, Muzyk, Oszust, Pielęgniarka, Pisarz, Prostytutka, Prywatny detektyw, Reporter, Szpieg, Włamywacz, Zabójca.", skills: ['bron_krotka', 'charakteryzacja', 'gadanina', 'nasluchiwanie', 'prowadzenie_samochodu', 'psychologia', ...ART, 'ukrywanie', 'urok_osobisty', 'bijatyka', 'wycena', 'zreczne_palce'] },
+    "intrygant": { desc: "Czarujący manipulator. Swe motywy ukrywa za kłamstwami, często czerpiąc przyjemność z samego siania zamętu.", suggested: "Aktor, Artysta, Artysta estradowy, Barman/Kelnerka, Bogaty hobbysta, Detektyw agencji, Działacz związkowy, Dżentelmen/Dama, Fanatyk, Funkcjonariusz publiczny, Hazardzista, Muzyk, Oszust, Przywódca kultu, Reporter, Sekretarz/Sekretarka.", skills: ['charakteryzacja', 'gadanina', ...LANG, 'nasluchiwanie', 'perswazja', 'psychologia', 'skakanie', ...ART, 'ukrywanie', 'urok_osobisty', 'wspinaczka', 'zreczne_palce'] },
+    "lowca": { desc: "Ściga swoją ofiarę z pełną bezwzględnością. Czeka na dogodną okazję, gardząc brawurą. Łowów pragnie dla zapanowania nad otoczeniem.", suggested: "Bokser, Detektyw agencji, Detektyw policyjny, Działacz związkowy, Dziewczyna gangstera, Gangster, Gliniarz, Kasiarz, Łowca nagród, Prywatny detektyw, Robotnik, Strażnik leśny.", skills: ['bron_ciezka', 'bron_krotka', 'karabin_strzelba', 'luk', 'nasluchiwanie', 'nawigacja', 'pierwsza_pomoc', 'plywanie', 'spostrzegawczosc', ...SURVIVAL, 'tresura_zwierzat', 'tropienie', 'ukrywanie', ...MELEE, 'wiedza_o_naturze'] },
+    "marzyciel": { desc: "Idealista o olbrzymiej wyobraźni. Spogląda poza rzeczy przyziemne w pragnieniu naprawienia świata i krzywd.", suggested: "Artysta, Barman/Kelnerka, Bibliotekarz, Bogaty hobbysta, Człowiek plemienny, Duchowny, Dżentelmen/Dama, Funkcjonariusz publiczny, Hazardzista, Muzyk, Okultysta, Pielęgniarka, Pisarz, Profesor, Prostytutka, Przywódca kultu, Sekretarz/Sekretarka, Student, Tramp, Włóczęga.", skills: ['historia', ...LANG, 'korzystanie_z_bibliotek', 'nasluchiwanie', 'okultyzm', ...ART, 'urok_osobisty', 'wiedza_o_naturze'] },
+    "mistyk": { desc: "Poszukiwacz ukrytego. Badacz świata niewidzialnego, pragnący poznać głębokie prawdy istnienia i wykraczające poza naturę moce.", suggested: "Artysta, Artysta estradowy, Bogaty hobbysta, Człowiek plemienny, Egzorcysta, Okultysta, Parapsycholog, Przywódca kultu.", skills: ['charakteryzacja', 'hipnoza', 'historia', ...LANG, 'nauka', 'okultyzm', 'psychologia', ...ART, 'ukrywanie', 'wiedza_o_naturze', 'zreczne_palce'] },
+    "mozgowiec": { desc: "Dla niego świat to łamigłówka do rozwikłania. Ludzie czynu, wprost uwielbiający brudzić ręce w poszukiwaniu wiedzy technicznej i fizycznej.", suggested: "Duchowny, Dziennikarz śledczy, Dżentelmen/Dama, Inżynier, Lekarz, Lokaj, Mechanik, Naukowiec, Przywódca kultu.", skills: ['antropologia', 'elektryka', ...LANG, 'korzystanie_z_bibliotek', 'korzystanie_z_komputerow', 'mechanika', ...SCIENCES, 'obsluga_ciezkiego_sprzetu', 'wycena'] },
+    "odkrywca": { desc: "Zawsze pragnie stymulacji. Spogląda bezwzględnie w stronę horyzontu. Często pogardza wygodami miejskiego życia na rzecz natury.", suggested: "Archeolog, Bogaty hobbysta, Człowiek plemienny, Detektyw agencji, Dziennikarz śledczy, Dziewczyna gangstera, Fotograf, Kierowca ucieczkowy, Łowca grubego zwierza, Łowca nagród, Marynarz, Misjonarz, Odkrywca, Pracownik tymczasowy, Strażnik leśny, Żołnierz.", skills: ['antropologia', 'archeologia', 'jezdziectwo', ...LANG, 'nawigacja', 'pierwsza_pomoc', ...PILOT, 'skakanie', ...SURVIVAL, 'tresura_zwierzat', 'tropienie', 'ukrywanie', 'bijatyka', 'wiedza_o_naturze', 'wspinaczka'] },
+    "osilek": { desc: "Umięśniony specjalista od walki w zwarciu. Spotkasz go raczej na arenie lub ulicy niż w bibliotece. Osiłki bywają mrukami lub wielkimi gadułami.", suggested: "Artysta estradowy, Atleta, Bokser, Chuligan, Człowiek plemienny, Gangster, Gliniarz, Łowca nagród, Marynarz, Mechanik, Płatny zbir, Pracownik tymczasowy, Robotnik, Włóczęga, Żołnierz.", skills: ['mechanika', 'nasluchiwanie', 'plywanie', 'psychologia', 'rzucanie', 'bijatyka', 'wspinaczka', 'zastraszanie'] },
+    "pomagier": { desc: "Młody entuzjasta u boku mentora. Posiada silny kompas moralny, często tkwiąc i ucząc się w cieniu swoich bardziej doświadczonych towarzyszy.", suggested: "Agent federalny, Barman/Kelnerka, Bibliotekarz, Chuligan, Człowiek plemienny, Dziewczyna gangstera, Fotograf, Gliniarz, Kierowca ucieczkowy, Lekarz, Lokaj, Naukowiec, Pisarz, Pielęgniarka, Prostytutka, Robotnik, Sekretarz/Sekretarka, Student, Szofer, Włóczęga.", skills: ['elektryka', 'gadanina', 'korzystanie_z_bibliotek', 'nasluchiwanie', ...SCIENCES, 'nawigacja', 'pierwsza_pomoc', 'skakanie', ...ART, 'tresura_zwierzat', 'tropienie', 'ukrywanie', 'wspinaczka'] },
+    "poszukiwacz": { desc: "Nigdy nie przejdzie obojętnie obok tajemnicy. Do problemów podchodzi z logiką, ryzykując wszystko w celu odkrycia obiektywnej prawdy.", suggested: "Agent federalny, Detektyw agencji, Detektyw policyjny, Dziennikarz śledczy, Gliniarz, Okultysta, Parapsycholog, Pisarz, Reporter, Student, Szpieg.", skills: ['charakteryzacja', 'historia', 'korzystanie_z_bibliotek', 'ksiegowosc', 'nasluchiwanie', ...SCIENCES, 'okultyzm', 'prawo', 'psychologia', 'spostrzegawczosc', 'ukrywanie', 'wycena'] },
+    "smialek": { desc: "Nieuleczalny ryzykant jak ćma dążąca do ognia. Szuka wysokiej adrenaliny w wyczynach i brawurowych, niebezpiecznych sportach.", suggested: "Aktor, Artysta estradowy, Atleta, Bogaty hobbysta, Działacz związkowy, Dziennikarz śledczy, Dziewczyna gangstera, Dżentelmen/Dama, Fanatyk, Gangster, Hazardzista, Kasiarz, Kierowca ucieczkowy, Lotnik, Łowca nagród, Marynarz, Misjonarz, Muzyk, Odkrywca, Okultysta, Parapsycholog, Prostytutka, Strażnik leśny, Szpieg, Włamywacz, Żołnierz.", skills: ['gadanina', 'jezdziectwo', 'mechanika', 'nawigacja', 'nurkowanie', ...PILOT, 'plywanie', 'prowadzenie_samochodu', 'rzucanie', 'skakanie', ...ART, ...SURVIVAL, 'ukrywanie', 'urok_osobisty', 'wspinaczka'] },
+    "twardasztuka": { desc: "Wie, że by złapać złodzieja, trzeba myśleć jak on. Harda, obiektywna, czasem cyniczna, gotowa do działań na granicy prawa by dopiąć swego.", suggested: "Bokser, Detektyw agencji, Detektyw policyjny, Działacz związkowy, Dziewczyna gangstera, Gangster, Gliniarz, Kasiarz, Łowca nagród, Prywatny detektyw, Robotnik, Strażnik leśny.", skills: [...FIREARMS, 'gadanina', 'nasluchiwanie', 'prawo', 'prowadzenie_samochodu', 'rzucanie', 'spostrzegawczosc', ...ART, 'slusarstwo', 'ukrywanie', 'bijatyka', 'zastraszanie', 'zreczne_palce'] },
+    "uczony": { desc: "Z nosem w książce bada wielkie tajemnice z dala od fizycznej akcji. Jego rozległa wiedza często bywa decydująca w przełomowych chwilach.", suggested: "Archeolog, Bibliotekarz, Lekarz, Naukowiec, Parapsycholog, Pisarz, Profesor.", skills: ['antropologia', 'historia', ...LANG, 'korzystanie_z_bibliotek', 'kryptografia', 'ksiegowosc', 'medycyna', ...SCIENCES, 'okultyzm', 'wiedza_o_naturze'] },
+    "zabijaka": { desc: "Skuteczny, brutalny, rozwiązuje spory pięściami a nie słowami. Cechuje go nieuznawanie autorytetów, walczy równie nieczysto co jego mityczni wrogowie.", suggested: "Bokser, Chuligan, Człowiek plemienny, Detektyw agencji, Detektyw policyjny, Działacz związkowy, Dziewczyna gangstera, Gangster, Gliniarz, Kasiarz, Marynarz, Mechanik, Pielęgniarka, Płatny zbir, Prostytutka, Reporter, Robotnik, Strażnik leśny, Zabójca, Żołnierz.", skills: [...FIREARMS, 'mechanika', 'nasluchiwanie', 'plywanie', 'prowadzenie_samochodu', 'rzucanie', 'spostrzegawczosc', 'bijatyka', 'zastraszanie'] },
+    "zawadiaka": { desc: "Pełen werwy romantyk gardzący bronią palną. Odwaga, brawura i ratowanie z opresji - to jego domena, z której zawsze wychodzi z uśmiechem.", suggested: "Aktor, Artysta, Artysta estradowy, Bogaty hobbysta, Dziennikarz śledczy, Dżentelmen/Dama, Lotnik, Łowca grubego zwierza, Łowca nagród, Marynarz, Misjonarz, Oficer wojskowy, Prywatny detektyw, Strażnik leśny, Szpieg, Żołnierz.", skills: [...LANG, 'mechanika', 'nawigacja', ...PILOT, 'plywanie', 'rzucanie', 'skakanie', ...ART, 'ukrywanie', 'urok_osobisty', ...MELEE, 'wspinaczka'] },
+    "zlotaraczka": { desc: "Praktyczny improwizator potrafiący naprawić z plątaniny kabli niemal każdy mechanizm. Nie ma dla niego wyzwań inżynieryjnych niemożliwych do obejścia.", suggested: "Barman/Kelnerka, Działacz związkowy, Inżynier, Kierowca ucieczkowy, Lokaj, Marynarz, Mechanik, Pracownik tymczasowy, Student, Szofer, Tramp, Włamywacz, Włóczęga, Żołnierz.", skills: ['elektryka', 'mechanika', 'obsluga_ciezkiego_sprzetu', 'prowadzenie_samochodu', 'rzucanie', 'spostrzegawczosc', ...ART, 'slusarstwo', 'bijatyka', 'wycena'] }
+  };
+
+  const occupations = {
+    "agent": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Inni agenci federalni, policja, organizacje przestępcze.", cr: [20, 40], skills: [...FIREARMS, 'perswazja', 'prawo', 'prowadzenie_samochodu', 'spostrzegawczosc', 'ukrywanie', 'bijatyka'] },
+    "aktor_film": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 2, cnt: "Pracownicy branży filmowej, krytycy prasowi, scenarzyści.", cr: [20, 90], skills: ['charakteryzacja', 'prowadzenie_samochodu', 'psychologia', ...ART, ...INTERPERSONAL] },
+    "aktor_scena": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 1, cnt: "Środowisko teatralne, krytycy sztuki, związki zawodowe aktorów.", cr: [9, 40], skills: ['charakteryzacja', 'historia', 'psychologia', ...ART, ...MELEE, ...INTERPERSONAL] },
+    "archeolog": { fixed: "edu*4", desc: "WYK×4", any: 0, cnt: "Sponsorzy, muzea, uczelnie wyższe.", cr: [10, 40], skills: ['archeologia', 'historia', ...LANG, 'korzystanie_z_bibliotek', 'mechanika', ...SCIENCES, 'nawigacja', 'spostrzegawczosc', 'wycena'] },
+    "artysta": { fixed: "edu*2", choice: ["dex*2", "pow*2"], labels: ["Zręczność (ZR)", "Moc (MOC)"], desc: "WYK×2 + (ZR×2 lub MOC×2)", any: 2, cnt: "Galerie sztuki, krytycy, bogaci sponsorzy, branża reklamowa.", cr: [9, 50], skills: ['historia', 'wiedza_o_naturze', ...LANG, 'psychologia', 'spostrzegawczosc', ...ART, ...INTERPERSONAL] },
+    "artysta_estr": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 2, cnt: "Aktorzy wodewilowi, ludzie teatru, branża filmowa.", cr: [9, 70], skills: ['charakteryzacja', 'nasluchiwanie', 'psychologia', ...ART, ...INTERPERSONAL] },
+    "atleta": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 1, cnt: "Sportowcy, dziennikarze sportowi, inne osoby z gazet.", cr: [9, 70], skills: ['jezdziectwo', 'plywanie', 'rzucanie', 'skakanie', 'bijatyka', 'wspinaczka', ...INTERPERSONAL] },
+    "barman": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 1, cnt: "Stali bywalcy, potencjalnie członkowie organizacji przestępczych.", cr: [8, 25], skills: ['ksiegowosc', 'nasluchiwanie', 'psychologia', 'spostrzegawczosc', 'bijatyka', ...INTERPERSONAL] },
+    "bibliotekarz": { fixed: "edu*4", desc: "WYK×4", any: 4, cnt: "Księgarze, koła zainteresowań, specjaliści.", cr: [9, 35], skills: [...LANG, 'jezyk_ojczysty', 'korzystanie_z_bibliotek', 'ksiegowosc'] },
+    "bogaty": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 3, cnt: "Różne, ale zazwyczaj elita, bohema, przedstawiciele wyższych sfer.", cr: [50, 99], skills: [...FIREARMS, 'jezdziectwo', ...LANG, ...ART, ...INTERPERSONAL] },
+    "bokser": { fixed: "edu*2 + str*2", desc: "WYK×2 + S×2", any: 2, cnt: "Promotorzy, dziennikarze, trenerzy, półświatek.", cr: [9, 60], skills: ['psychologia', 'skakanie', 'spostrzegawczosc', 'unik', 'bijatyka', 'zastraszanie'] },
+    "chuligan": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Drobni przestępcy, chuligani, lokalni policjanci.", cr: [3, 10], skills: [...FIREARMS, 'rzucanie', 'skakanie', 'ukrywanie', ...MELEE, 'wspinaczka', 'zreczne_palce', ...INTERPERSONAL] },
+    "plemienny": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Pozostali członkowie plemienia.", cr: [0, 15], skills: ['nasluchiwanie', 'okultyzm', 'plywanie', 'rzucanie', ...MELEE, 'spostrzegawczosc', ...SURVIVAL, 'wiedza_o_naturze', 'wspinaczka'] },
+    "detektyw_ag": { fixed: "edu*2", choice: ["str*2", "dex*2"], labels: ["Siła (S)", "Zręczność (ZR)"], desc: "WYK×2 + (S×2 lub ZR×2)", any: 0, cnt: "Miejscowi stróże prawa, klienci.", cr: [20, 45], skills: [...FIREARMS, 'korzystanie_z_bibliotek', 'prawo', 'psychologia', 'tropienie', 'ukrywanie', 'bijatyka', ...INTERPERSONAL] },
+    "detektyw_pol": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 1, cnt: "Policjanci, pracownicy biura koronera, drobni przestępcy.", cr: [20, 50], skills: [...FIREARMS, 'charakteryzacja', ...ART, 'nasluchiwanie', 'prawo', 'psychologia', 'spostrzegawczosc', ...INTERPERSONAL] },
+    "duchowny": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Hierarchowie kościelni, członkowie miejscowej wspólnoty.", cr: [9, 60], skills: ['historia', ...LANG, 'korzystanie_z_bibliotek', 'ksiegowosc', 'nasluchiwanie', 'psychologia', ...INTERPERSONAL] },
+    "dzialacz": { fixed: "edu*4", desc: "WYK×4", any: 0, cnt: "Inni działacze, zaprzyjaźnieni politycy, czasem przestępcy lub komuniści.", cr: [5, 30], skills: ['ksiegowosc', 'nasluchiwanie', 'obsluga_ciezkiego_sprzetu', 'prawo', 'psychologia', 'bijatyka', ...INTERPERSONAL] },
+    "dziennikarz": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Prasa, politycy, drobni przestępcy, policja.", cr: [9, 30], skills: ['historia', 'jezyk_ojczysty', 'korzystanie_z_bibliotek', 'psychologia', ...ART, ...INTERPERSONAL] },
+    "dziewczyna": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 1, cnt: "Gangsterzy, policjanci, właściciele sklepów i lokali.", cr: [10, 80], skills: ['bron_krotka', 'bijatyka', 'nasluchiwanie', 'prowadzenie_samochodu', ...ART, 'ukrywanie', ...INTERPERSONAL] },
+    "dzentelmen": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 0, cnt: "Przedstawiciele wyższych sfer, posiadacze ziemscy, słudzy.", cr: [40, 90], skills: ['karabin_strzelba', 'historia', 'jezdziectwo', ...LANG, 'nawigacja', ...ART, ...INTERPERSONAL] },
+    "egzorcysta": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Członkowie organizacji religijnych.", cr: [25, 55], skills: ['antropologia', 'historia', ...LANG, 'korzystanie_z_bibliotek', 'nasluchiwanie', 'okultyzm', 'psychologia'] },
+    "fanatyk": { fixed: "edu*2", choice: ["app*2", "pow*2"], labels: ["Wygląd (WYG)", "Moc (MOC)"], desc: "WYK×2 + (WYG×2 lub MOC×2)", any: 3, cnt: "Organizacje religijne, bractwa, dziennikarze.", cr: [0, 30], skills: ['historia', 'psychologia', 'ukrywanie', ...INTERPERSONAL] },
+    "fotograf": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Branża reklamowa, politycy, gazety.", cr: [9, 30], skills: ['nauka', 'psychologia', 'spostrzegawczosc', ...ART, 'ukrywanie', ...INTERPERSONAL] },
+    "urzednik": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 0, cnt: "Politycy, urzędnicy, biznesmeni, inni urzędnicy.", cr: [50, 90], skills: ['gadanina', 'historia', 'jezyk_ojczysty', 'nasluchiwanie', 'perswazja', 'psychologia', 'urok_osobisty', 'zastraszanie'] },
+    "gangster_pod": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 2, cnt: "Drobni przestępcy, policjanci, miejscowi przedsiębiorcy.", cr: [9, 20], skills: [...FIREARMS, 'prowadzenie_samochodu', 'psychologia', ...MELEE, ...INTERPERSONAL] },
+    "gangster_szef": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 0, cnt: "Inni członkowie organizacji, urzędnicy, sędziowie, politycy.", cr: [60, 95], skills: [...FIREARMS, 'nasluchiwanie', 'prawo', 'psychologia', 'spostrzegawczosc', ...MELEE, ...INTERPERSONAL] },
+    "gliniarz": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Inni policjanci, mieszkańcy rewiru, drobni przestępcy.", cr: [9, 30], skills: [...FIREARMS, 'pierwsza_pomoc', 'prawo', 'psychologia', 'spostrzegawczosc', 'bijatyka', ...INTERPERSONAL, 'jezdziectwo', 'prowadzenie_samochodu'] },
+    "hazardzista": { fixed: "edu*2", choice: ["app*2", "dex*2"], labels: ["Wygląd (WYG)", "Zręczność (ZR)"], desc: "WYK×2 + (WYG×2 lub ZR×2)", any: 0, cnt: "Bukmacherzy, członkowie organizacji przestępczych, ulica.", cr: [8, 50], skills: ['ksiegowosc', 'nasluchiwanie', 'psychologia', 'spostrzegawczosc', ...ART, 'zreczne_palce', ...INTERPERSONAL] },
+    "inzynier": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Robotnicy, firmy budowlane, przedstawiciele władz lokalnych.", cr: [30, 60], skills: ['elektryka', 'korzystanie_z_bibliotek', 'mechanika', 'nauka', 'obsluga_ciezkiego_sprzetu', ...ART] },
+    "jogin": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Plemię, bractwa okultystyczne, bogaci sponsorzy.", cr: [6, 60], skills: ['historia', ...LANG, 'okultyzm', 'pierwsza_pomoc', 'wiedza_o_naturze', ...INTERPERSONAL] },
+    "lokaj": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Służba z innych domów, dostawcy, właściciele sklepów.", cr: [9, 40], skills: ['ksiegowosc', 'wycena', 'nasluchiwanie', 'pierwsza_pomoc', 'psychologia', 'spostrzegawczosc', ...ART] },
+    "kasiarz": { fixed: "edu*2", choice: ["str*2", "dex*2"], labels: ["Siła (S)", "Zręczność (ZR)"], desc: "WYK×2 + (S×2 lub ZR×2)", any: 1, cnt: "Byli członkowie gangu, niezrzeszeni przestępcy.", cr: [5, 75], skills: [...FIREARMS, 'elektryka', 'mechanika', 'obsluga_ciezkiego_sprzetu', 'prowadzenie_samochodu', 'slusarstwo', ...MELEE, 'zastraszanie'] },
+    "kierowca": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 1, cnt: "Klienci z półświatka, policja, szeroko pojęci ludzie ulicy.", cr: [9, 20], skills: ['ksiegowosc', 'mechanika', 'nasluchiwanie', 'nawigacja', 'prowadzenie_samochodu', 'psychologia', ...INTERPERSONAL] },
+    "lekarz": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Lekarze, pacjenci, inni pracownicy medyczni.", cr: [30, 80], skills: [...LANG, 'medycyna', ...SCIENCES, 'pierwsza_pomoc', 'psychologia'] },
+    "lotnik": { fixed: "edu*2 + dex*2", desc: "WYK×2 + ZR×2", any: 1, cnt: "Piloci, stara wiara z wojska, biznesmeni.", cr: [30, 60], skills: ['elektryka', 'ksiegowosc', 'mechanika', 'nasluchiwanie', 'nawigacja', ...PILOT, 'spostrzegawczosc'] },
+    "lowca_zwierz": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Rządy państw, czarny rynek, właściciele zoo.", cr: [20, 50], skills: [...FIREARMS, ...LANG, ...SURVIVAL, 'nasluchiwanie', 'spostrzegawczosc', 'nauka', 'nawigacja', 'tropienie', 'ukrywanie', 'wiedza_o_naturze'] },
+    "lowca_nagrod": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Poręczyciele, policja, informatorzy na ulicy.", cr: [9, 30], skills: [...FIREARMS, ...MELEE, 'elektryka', 'mechanika', 'prawo', 'prowadzenie_samochodu', 'psychologia', 'tropienie', 'ukrywanie', ...INTERPERSONAL] },
+    "marynarz": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Wojskowi, członkowie stowarzyszeń weteranów.", cr: [9, 30], skills: [...FIREARMS, 'elektryka', 'mechanika', 'nawigacja', 'pierwsza_pomoc', ...PILOT, 'plywanie', ...SURVIVAL, ...MELEE] },
+    "mechanik": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Działacze związkowi, inni specjaliści z branży.", cr: [9, 40], skills: ['elektryka', 'mechanika', 'obsluga_ciezkiego_sprzetu', 'prowadzenie_samochodu', ...ART, 'wspinaczka'] },
+    "misjonarz": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 2, cnt: "Hierarchowie kościoła, władze innych państw.", cr: [0, 30], skills: ['mechanika', 'medycyna', 'pierwsza_pomoc', ...ART, 'wiedza_o_naturze', ...INTERPERSONAL] },
+    "muzyk": { fixed: "edu*2", choice: ["app*2", "dex*2"], labels: ["Wygląd (WYG)", "Zręczność (ZR)"], desc: "WYK×2 + (WYG×2 lub ZR×2)", any: 4, cnt: "Właściciele klubów, związki muzyków, czasem przestępcy.", cr: [9, 30], skills: ['nasluchiwanie', 'psychologia', ...ART, ...INTERPERSONAL] },
+    "naukowiec": { fixed: "edu*4", desc: "WYK×4", any: 0, cnt: "Inni akademicy, pracownicy uniwersyteccy.", cr: [9, 50], skills: [...LANG, 'jezyk_ojczysty', 'korzystanie_z_bibliotek', 'korzystanie_z_komputerow', 'spostrzegawczosc', ...SCIENCES, ...INTERPERSONAL] },
+    "odkrywca": { fixed: "edu*2", choice: ["app*2", "dex*2", "str*2"], labels: ["Wygląd (WYG)", "Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (WYG×2 lub ZR×2 lub S×2)", any: 0, cnt: "Muzealnicy, bogaci sponsorzy, wielkie biblioteki, tubylcy.", cr: [55, 80], skills: [...FIREARMS, 'historia', ...LANG, 'nawigacja', 'plywanie', 'wspinaczka', 'skakanie', ...SURVIVAL, 'wiedza_o_naturze'] },
+    "oficer": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 2, cnt: "Inni wojskowi, przedstawiciele rządu federalnego.", cr: [20, 70], skills: [...INTERPERSONAL, ...FIREARMS, 'ksiegowosc', 'nawigacja', 'pierwsza_pomoc', 'psychologia'] },
+    "okultysta": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Pracownicy bibliotek, członkowie bractw okultystycznych.", cr: [10, 80], skills: ['antropologia', 'historia', ...LANG, 'korzystanie_z_bibliotek', 'nauka', 'okultyzm', ...INTERPERSONAL] },
+    "oszust": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 0, cnt: "Inni kanciarze, niezrzeszeni przestępcy uliczni.", cr: [10, 65], skills: [...LANG, 'prawo', 'nasluchiwanie', 'psychologia', ...ART, 'wycena', 'zreczne_palce', ...INTERPERSONAL] },
+    "parapsycholog": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Uczelnie wyższe, stowarzyszenia, zamożni klienci.", cr: [9, 30], skills: ['antropologia', 'historia', ...LANG, 'korzystanie_z_bibliotek', 'okultyzm', 'psychologia', ...ART] },
+    "pielegniarka": { fixed: "edu*4", desc: "WYK×4", any: 0, cnt: "Pracownicy szpitali, lekarze, opieka społeczna.", cr: [9, 30], skills: ['medycyna', 'nasluchiwanie', 'nauka', 'pierwsza_pomoc', 'psychologia', 'spostrzegawczosc', ...INTERPERSONAL] },
+    "pisarz": { fixed: "edu*4", desc: "WYK×4", any: 1, cnt: "Wydawcy, krytycy literaccy, historycy.", cr: [9, 30], skills: ['historia', ...LANG, 'jezyk_ojczysty', 'korzystanie_z_bibliotek', 'okultyzm', 'wiedza_o_naturze', 'psychologia', ...ART] },
+    "zbir": { fixed: "edu*2 + str*2", desc: "WYK×2 + S×2", any: 0, cnt: "Organizacja przestępcza, patrole uliczne, handlarze.", cr: [5, 30], skills: [...FIREARMS, 'prowadzenie_samochodu', 'psychologia', 'spostrzegawczosc', 'ukrywanie', ...MELEE, ...INTERPERSONAL] },
+    "tymczasowy": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 2, cnt: "Włóczędzy, farmerzy, czasem policjanci patrolujący.", cr: [0, 10], skills: ['mechanika', 'nawigacja', ...ART, 'wiedza_o_naturze', 'wspinaczka', 'zreczne_palce'] },
+    "profesor": { fixed: "edu*4", desc: "WYK×4", any: 4, cnt: "Inni profesorowie, studenci, pracownicy bibliotek.", cr: [20, 70], skills: [...LANG, 'jezyk_ojczysty', 'korzystanie_z_bibliotek', 'psychologia'] },
+    "prostytutka": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 1, cnt: "Ulica, klienci, policjanci, miejscowi stręczyciele.", cr: [5, 50], skills: ['psychologia', ...ART, 'ukrywanie', 'unik', 'zreczne_palce', ...INTERPERSONAL] },
+    "prywatny": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 1, cnt: "Policjanci, szeroki wachlarz prywatnych klientów.", cr: [9, 30], skills: ['charakteryzacja', 'korzystanie_z_bibliotek', 'prawo', 'psychologia', 'spostrzegawczosc', ...ART, ...INTERPERSONAL] },
+    "przestepca": { fixed: "edu*2", choice: ["dex*2", "app*2"], labels: ["Zręczność (ZR)", "Wygląd (WYG)"], desc: "WYK×2 + (ZR×2 lub WYG×2)", any: 0, cnt: "Półświatek, policja, inni uliczni chuligani.", cr: [5, 65], skills: [...FIREARMS, ...MELEE, 'charakteryzacja', ...ART, 'mechanika', 'slusarstwo', 'psychologia', 'spostrzegawczosc', 'ukrywanie', 'wycena', ...INTERPERSONAL] },
+    "przywodca_kultu": { fixed: "edu*2 + app*2", desc: "WYK×2 + WYG×2", any: 2, cnt: "Wyznawcy, a nierzadko też sławne wdowy lub gwiazdy.", cr: [30, 60], skills: ['ksiegowosc', 'okultyzm', 'psychologia', 'spostrzegawczosc', ...INTERPERSONAL] },
+    "reporter": { fixed: "edu*4", desc: "WYK×4", any: 0, cnt: "Politycy, prasa, ulica, przedstawiciele wyższych sfer.", cr: [9, 30], skills: ['historia', 'jezyk_ojczysty', 'nasluchiwanie', 'psychologia', 'spostrzegawczosc', ...ART, 'ukrywanie', ...INTERPERSONAL] },
+    "robotnik": { fixed: "edu*2 + dex*2 + str*2", desc: "WYK×2 + ZR×2 + S×2", any: 1, cnt: "Inni robotnicy fizyczni, nadzorcy z danej branży.", cr: [5, 20], skills: ['elektryka', 'mechanika', 'obsluga_ciezkiego_sprzetu', 'pierwsza_pomoc', 'prowadzenie_samochodu', 'rzucanie', ...MELEE] },
+    "sekretarka": { fixed: "edu*2", choice: ["dex*2", "app*2"], labels: ["Zręczność (ZR)", "Wygląd (WYG)"], desc: "WYK×2 + (ZR×2 lub WYG×2)", any: 1, cnt: "Pracownicy biurowi, kadra dyrektorska kontrahentów.", cr: [9, 30], skills: ['jezyk_ojczysty', 'korzystanie_z_bibliotek', 'korzystanie_z_komputerow', 'ksiegowosc', 'psychologia', ...ART, ...INTERPERSONAL] },
+    "straznik": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Mieszkańcy okolic lasów, członkowie miejscowych plemion.", cr: [5, 20], skills: [...FIREARMS, 'nasluchiwanie', 'nawigacja', 'pierwsza_pomoc', 'spostrzegawczosc', ...SURVIVAL, 'tropienie', 'wiedza_o_naturze'] },
+    "student": { fixed: "edu*4", desc: "WYK×4", any: 2, cnt: "Studenci, wykładowcy, czasem pracownicy firm po stażach.", cr: [5, 10], skills: ['jezyk_ojczysty', ...LANG, 'korzystanie_z_bibliotek', 'nasluchiwanie', ...SCIENCES] },
+    "szofer": { fixed: "edu*2 + dex*2", desc: "WYK×2 + ZR×2", any: 1, cnt: "Politycy, majętni biznesmeni, a także bossowie przestępczy.", cr: [10, 40], skills: ['mechanika', 'nasluchiwanie', 'nawigacja', 'prowadzenie_samochodu', 'spostrzegawczosc', ...INTERPERSONAL] },
+    "szpieg": { fixed: "edu*2", choice: ["app*2", "dex*2"], labels: ["Wygląd (WYG)", "Zręczność (ZR)"], desc: "WYK×2 + (WYG×2 lub ZR×2)", any: 0, cnt: "Bezpośredni przełożeni oraz kontakty konspiracyjne.", cr: [20, 60], skills: [...FIREARMS, 'charakteryzacja', ...ART, ...LANG, 'nasluchiwanie', 'psychologia', 'ukrywanie', 'zreczne_palce', ...INTERPERSONAL] },
+    "tramp": { fixed: "edu*2", choice: ["app*2", "dex*2", "str*2"], labels: ["Wygląd (WYG)", "Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (WYG×2 lub ZR×2 lub S×2)", any: 2, cnt: "Inni włóczędzy, strażnicy linii kolejowych.", cr: [0, 5], skills: ['nasluchiwanie', 'nawigacja', 'skakanie', 'ukrywanie', 'wspinaczka', ...INTERPERSONAL] },
+    "wlamywacz": { fixed: "edu*2 + dex*2", desc: "WYK×2 + ZR×2", any: 0, cnt: "Paserzy i koledzy po (tym złym) fachu.", cr: [5, 40], skills: ['elektryka', 'mechanika', 'nasluchiwanie', 'spostrzegawczosc', 'slusarstwo', 'ukrywanie', 'wspinaczka', 'wycena', 'zreczne_palce'] },
+    "wloczega": { fixed: "edu*2", choice: ["app*2", "dex*2"], labels: ["Wygląd (WYG)", "Zręczność (ZR)"], desc: "WYK×2 + (WYG×2 lub ZR×2)", any: 1, cnt: "Inni włóczędzy, naiwni pożyczkodawcy z prowincji.", cr: [0, 5], skills: ['nasluchiwanie', 'nawigacja', 'skakanie', ...ART, 'slusarstwo', 'zreczne_palce', 'ukrywanie', 'wspinaczka'] },
+    "zabojca": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Nieliczne kontakty w półświatku. Najlepsi cieszą się mroczną reputacją.", cr: [30, 60], skills: [...FIREARMS, 'charakteryzacja', 'elektryka', 'mechanika', 'psychologia', 'slusarstwo', 'ukrywanie', ...MELEE] },
+    "zolnierz": { fixed: "edu*2", choice: ["dex*2", "str*2"], labels: ["Zręczność (ZR)", "Siła (S)"], desc: "WYK×2 + (ZR×2 lub S×2)", any: 0, cnt: "Inni żołnierze, weterani i stowarzyszenia kombatanckie.", cr: [9, 30], skills: [...FIREARMS, 'plywanie', 'wspinaczka', ...SURVIVAL, 'ukrywanie', 'unik', ...MELEE, ...LANG, 'mechanika', 'pierwsza_pomoc'] }
+  };
+
+  const charIds = ['str', 'con', 'siz', 'dex', 'app', 'int', 'pow', 'edu'];
+  const charNames = ['Siła (STR)', 'Kondycja (CON)', 'Budowa (SIZ)', 'Zręczność (DEX)', 'Wygląd (APP)', 'Inteligencja (INT)', 'Moc (POW)', 'Wykształcenie (EDU)'];
+  
+  const skillsData = [
+    { id: 'antropologia', name: 'Antropologia', base: 1, tags: [] },
+    { id: 'archeologia', name: 'Archeologia', base: 1, tags: [] },
+    { id: 'bron_artyleryjska', name: 'Broń Artyleryjska', base: 1, tags: [] },
+    { id: 'bron_ciezka', name: 'Broń Palna: Ciężka', base: 10, tags: [] },
+    { id: 'bron_krotka', name: 'Broń Palna: Krótka', base: 20, tags: [] },
+    { id: 'karabin_maszynowy', name: 'Broń Palna: K. Maszynowy', base: 10, tags: [] },
+    { id: 'karabin_strzelba', name: 'Broń Palna: Karabin', base: 25, tags: [] },
+    { id: 'luk', name: 'Broń Palna: Łuk', base: 10, tags: [] },
+    { id: 'miotacz_ognia', name: 'Broń Palna: Miotacz', base: 10, tags: [] },
+    { id: 'pistolet_maszynowy', name: 'Broń Palna: P. Maszynowy', base: 15, tags: [] },
+    { id: 'charakteryzacja', name: 'Charakteryzacja', base: 5, tags: [] },
+    { id: 'czytanie_z_ruchu_warg', name: 'Czytanie z R. Warg', base: 1, tags: [] },
+    { id: 'elektryka', name: 'Elektryka', base: 10, tags: [] },
+    { id: 'gadanina', name: 'Gadanina', base: 5, tags: [] },
+    { id: 'hipnoza', name: 'Hipnoza', base: 1, tags: [] },
+    { id: 'historia', name: 'Historia', base: 5, tags: [] },
+    { id: 'jezdziectwo', name: 'Jeździectwo', base: 5, tags: [] },
+    { id: 'jezyk_obcy', name: 'Język Obcy', base: 1, tags: [] },
+    { id: 'jezyk_ojczysty', name: 'Język Ojczysty', base: 0, tags: [] },
+    { id: 'korzystanie_z_bibliotek', name: 'Korz. z Bibliotek', base: 20, tags: [] },
+    { id: 'korzystanie_z_komputerow', name: 'Korz. z Komputerów', base: 0, tags: [] },
+    { id: 'ksiegowosc', name: 'Księgowość', base: 5, tags: [] },
+    { id: 'materialy_wybuchowe', name: 'Mat. Wybuchowe', base: 1, tags: [] },
+    { id: 'mechanika', name: 'Mechanika', base: 10, tags: [] },
+    { id: 'medycyna', name: 'Medycyna', base: 1, tags: [] },
+    { id: 'mity_cthulhu', name: 'Mity Cthulhu', base: 0, tags: [] },
+    { id: 'nasluchiwanie', name: 'Nasłuchiwanie', base: 20, tags: [] },
+    { id: 'nauka', name: 'Nauka', base: 1, tags: [] },
+    { id: 'nawigacja', name: 'Nawigacja', base: 10, tags: [] },
+    { id: 'nurkowanie', name: 'Nurkowanie', base: 1, tags: [] },
+    { id: 'obsluga_ciezkiego_sprzetu', name: 'Ciężki Sprzęt', base: 1, tags: [] },
+    { id: 'okultyzm', name: 'Okultyzm', base: 5, tags: [] },
+    { id: 'perswazja', name: 'Perswazja', base: 10, tags: [] },
+    { id: 'pierwsza_pomoc', name: 'Pierwsza Pomoc', base: 30, tags: [] },
+    { id: 'pilotowanie', name: 'Pilotowanie', base: 1, tags: [] },
+    { id: 'plywanie', name: 'Pływanie', base: 20, tags: [] },
+    { id: 'prawo', name: 'Prawo', base: 5, tags: [] },
+    { id: 'prowadzenie_samochodu', name: 'Prow. Samochodu', base: 20, tags: [] },
+    { id: 'psychoanaliza', name: 'Psychoanaliza', base: 1, tags: [] },
+    { id: 'psychologia', name: 'Psychologia', base: 10, tags: [] },
+    { id: 'rzucanie', name: 'Rzucanie', base: 20, tags: [] },
+    { id: 'skakanie', name: 'Skakanie', base: 20, tags: [] },
+    { id: 'spostrzegawczosc', name: 'Spostrzegawczość', base: 25, tags: [] },
+    { id: 'sztuka_przetrwania', name: 'Sz. Przetrwania', base: 10, tags: [] },
+    { id: 'sztuka_rzemioslo', name: 'Sztuka/Rzemiosło', base: 5, tags: [] },
+    { id: 'slusarstwo', name: 'Ślusarstwo', base: 1, tags: [] },
+    { id: 'tresura_zwierzat', name: 'Tresura Zwierząt', base: 5, tags: [] },
+    { id: 'tropienie', name: 'Tropienie', base: 10, tags: [] },
+    { id: 'ukrywanie', name: 'Ukrywanie', base: 20, tags: [] },
+    { id: 'unik', name: 'Unik', base: 0, tags: [] },
+    { id: 'urok_osobisty', name: 'Urok Osobisty', base: 15, tags: [] },
+    { id: 'bicz', name: 'Walka: Bicz', base: 5, tags: [] },
+    { id: 'bijatyka', name: 'Walka: Bijatyka', base: 25, tags: [] },
+    { id: 'bron_obuchowa', name: 'Walka: B. Obuchowa', base: 10, tags: [] },
+    { id: 'garota', name: 'Walka: Garota', base: 15, tags: [] },
+    { id: 'miecz', name: 'Walka: Miecz', base: 20, tags: [] },
+    { id: 'pila_lancuchowa', name: 'Walka: Piła', base: 10, tags: [] },
+    { id: 'topor_siekiera', name: 'Walka: Topór', base: 15, tags: [] },
+    { id: 'wlocznia', name: 'Walka: Włócznia', base: 20, tags: [] },
+    { id: 'wiedza_o_naturze', name: 'Wiedza o Naturze', base: 10, tags: [] },
+    { id: 'wiedza_tajemna', name: 'Wiedza Tajemna', base: 1, tags: [] },
+    { id: 'wspinaczka', name: 'Wspinaczka', base: 20, tags: [] },
+    { id: 'wycena', name: 'Wycena', base: 5, tags: [] },
+    { id: 'zastraszanie', name: 'Zastraszanie', base: 15, tags: [] },
+    { id: 'zreczne_palce', name: 'Zręczne Palce', base: 10, tags: [] }
+  ];
+
+  const state = {
+    chars: {}, skills: {},
+    cr: { current: 0, z: 0, w: 0 },
+    activeArchetype: 'none', activeOccup: 'none',
+    maxCharPoints: 500, maxArchPoints: 100, maxOccPoints: 0,
+    crReq: [0, 99]
+  };
+
+  charIds.forEach(id => state.chars[id] = 0);
+  skillsData.forEach(s => { state.skills[s.id] = { base: s.base, currentBase: s.base, z: 0, a: 0, w: 0, isArch: false, isOcc: false }; });
+
+  const charsContainer = document.getElementById('characteristics-list');
+  charIds.forEach((id, index) => {
+    charsContainer.innerHTML += `
+      <div class="stat-row">
+        <label for="${id}">${charNames[index]}</label>
+        <input type="number" id="${id}" value="0" min="0" max="90">
+      </div>`;
+  });
+
+  const skillsContainer = document.getElementById('skills-list');
+  function renderSkills() {
+    skillsContainer.innerHTML = '';
+    skillsData.forEach(skill => {
+      const s = state.skills[skill.id];
+      let tagsHtml = '';
+      if (s.isArch) tagsHtml += `<span class="tag tag-arch">[Arch]</span> `;
+      if (s.isOcc) tagsHtml += `<span class="tag tag-occ">[Zaw]</span>`;
+      
+      const val = s.currentBase + s.z + s.a + s.w;
+
+      skillsContainer.innerHTML += `
+        <div class="stat-row">
+          <div class="skill-label">
+            <label class="skill-name" for="${skill.id}">${skill.name} ${tagsHtml}</label>
+            <span class="skill-meta">Baza: <span id="${skill.id}-base">${s.currentBase}</span>%</span>
+          </div>
+          <div class="input-wrapper">
+            <input type="number" id="${skill.id}" class="skill-input" value="${val}" min="${s.currentBase}" max="99">
+            <div class="spent-breakdown">Z: <span class="spent-z">${s.z}</span> | A: <span class="spent-a">${s.a}</span> | W: <span class="spent-w">${s.w}</span></div>
+          </div>
+        </div>`;
+    });
+    document.querySelectorAll('.skill-input').forEach(inp => inp.addEventListener('change', handleSkillChange));
+  }
+
+  function updateDynamicBases() {
+    state.skills['jezyk_ojczysty'].currentBase = state.chars['edu'];
+    state.skills['unik'].currentBase = Math.floor(state.chars['dex'] / 2);
+  }
+
+  function handleCharChange(e) {
+    let val = parseInt(e.target.value) || 0;
+    if(val < 0) { val = 0; e.target.value = 0; }
+    state.chars[e.target.id] = val;
+    calculateAndRender();
+  }
+
+  function handleCRChange(e) {
+    let newVal = parseInt(e.target.value);
+    if(isNaN(newVal) || newVal < 0) newVal = 0;
+    if(newVal > 99) newVal = 99;
+
+    let delta = newVal - (state.cr.z + state.cr.w);
+    if(delta === 0) return;
+
+    const mode = document.querySelector('input[name="spend-mode"]:checked').value;
+    
+    if (mode === 'occupation') {
+        if(state.activeOccup === 'none') { e.target.value = state.cr.z + state.cr.w; return; }
+        state.cr.w += delta;
+        if(state.cr.w < 0) state.cr.w = 0;
+    } else if (mode === 'interest') {
+        state.cr.z += delta;
+        if(state.cr.z < 0) state.cr.z = 0;
+    } else {
+        e.target.value = state.cr.z + state.cr.w; return;
+    }
+    calculateAndRender();
+  }
+
+  function handleSkillChange(e) {
+    const id = e.target.id;
+    const s = state.skills[id];
+    let newVal = parseInt(e.target.value);
+    if (isNaN(newVal) || newVal < s.currentBase) newVal = s.currentBase;
+
+    let delta = newVal - (s.currentBase + s.z + s.a + s.w);
+    if (delta === 0) return;
+
+    const mode = document.querySelector('input[name="spend-mode"]:checked').value;
+
+    if (mode === 'archetype') {
+      if (!s.isArch) { e.target.value = s.currentBase + s.z + s.a + s.w; return; }
+      s.a += delta; if (s.a < 0) s.a = 0;
+    } else if (mode === 'occupation') {
+      
+      // Specjalna logika dla "dowolnych umiejętności"
+      if (!s.isOcc) { 
+        let allowedAny = 0;
+        if (state.activeOccup !== 'none') {
+            allowedAny = occupations[state.activeOccup].any || 0;
+        }
+
+        if (allowedAny > 0) {
+          let nonOccSpentCount = 0;
+          for (let k in state.skills) {
+            if (!state.skills[k].isOcc && state.skills[k].w > 0) {
+              nonOccSpentCount++;
+            }
+          }
+          // Jeśli to nowa umiejętność (dotychczas było na niej 0 w) i przekracza limit - blokujemy
+          if (s.w === 0 && delta > 0 && nonOccSpentCount >= allowedAny) {
+            alert(`Twój zawód pozwala na wydawanie punktów z puli Zawodu tylko na ${allowedAny} dodatkową/e umiejętność(ci) spoza standardowej listy.`);
+            e.target.value = s.currentBase + s.z + s.a + s.w;
+            return;
+          }
+        } else {
+           // Jeśli zawód w ogóle nie pozwala na dowolne umiejętności
+           e.target.value = s.currentBase + s.z + s.a + s.w; 
+           return; 
+        }
+      }
+      
+      s.w += delta; if (s.w < 0) s.w = 0;
+    } else {
+      s.z += delta; if (s.z < 0) s.z = 0;
+    }
+    calculateAndRender();
+  }
+
+  function evalOccFormula(occKey) {
+    if (occKey === 'none') return 0;
+    const occ = occupations[occKey];
+    
+    const str = state.chars['str'] || 0; const con = state.chars['con'] || 0;
+    const siz = state.chars['siz'] || 0; const dex = state.chars['dex'] || 0;
+    const app = state.chars['app'] || 0; const int = state.chars['int'] || 0;
+    const pow = state.chars['pow'] || 0; const edu = state.chars['edu'] || 0;
+    
+    let total = eval(occ.fixed) || 0;
+    
+    if (occ.choice) {
+       const choiceFormula = document.getElementById('occ-stat-select').value;
+       if(choiceFormula) {
+         total += eval(choiceFormula) || 0;
+       }
+    }
+    
+    return total;
+  }
+
+  function handleSelectors() {
+    const archKey = document.getElementById('archetype-select').value;
+    state.activeArchetype = archKey;
+    document.getElementById('mode-arch').disabled = (archKey === 'none');
+    
+    if(archKey === 'none') {
+      document.getElementById('archetype-desc').innerHTML = "Brak (0 pkt)";
+    } else {
+      const arch = archetypes[archKey];
+      document.getElementById('archetype-desc').innerHTML = `${arch.desc} <span class="desc-accent">Sugerowane zawody:</span> ${arch.suggested}`;
+    }
+
+    const occKey = document.getElementById('occup-select').value;
+    state.activeOccup = occKey;
+    document.getElementById('mode-occ').disabled = (occKey === 'none');
+    
+    const choiceBox = document.getElementById('occ-choice-box');
+    const selectBox = document.getElementById('occ-stat-select');
+    
+    Object.keys(state.skills).forEach(k => { state.skills[k].isArch = false; state.skills[k].isOcc = false; });
+    
+    if(archKey !== 'none') {
+      archetypes[archKey].skills.forEach(id => { if(state.skills[id]) state.skills[id].isArch = true; });
+    }
+
+    if(occKey !== 'none') {
+      const o = occupations[occKey];
+      let anyText = o.any > 0 ? ` (+ ${o.any} dowolna/e)` : "";
+      
+      document.getElementById('occup-desc').innerHTML = `Wzór: <strong>${o.desc}</strong>${anyText} <br><span class="desc-occ">Sugerowane kontakty:</span> ${o.cnt}`;
+      state.crReq = o.cr;
+      o.skills.forEach(id => { if(state.skills[id]) state.skills[id].isOcc = true; });
+      
+      if (o.choice) {
+        choiceBox.style.display = 'block';
+        if (selectBox.getAttribute('data-last-occ') !== occKey) {
+            selectBox.innerHTML = '';
+            o.choice.forEach((formulaStr, i) => {
+                const opt = document.createElement('option');
+                opt.value = formulaStr;
+                opt.textContent = o.labels[i];
+                selectBox.appendChild(opt);
+            });
+            selectBox.setAttribute('data-last-occ', occKey);
+        }
+      } else {
+        choiceBox.style.display = 'none';
+        selectBox.innerHTML = '';
+        selectBox.setAttribute('data-last-occ', '');
+      }
+
+    } else {
+      document.getElementById('occup-desc').innerHTML = "Brak zawodowych pkt.";
+      state.crReq = [0, 99];
+      choiceBox.style.display = 'none';
+    }
+    
+    calculateAndRender();
+  }
+
+  function calculateAndRender() {
+    updateDynamicBases();
+
+    let charSum = Object.values(state.chars).reduce((a, b) => a + b, 0);
+    const remChar = state.maxCharPoints - charSum;
+    document.getElementById('char-points').textContent = remChar;
+    document.getElementById('char-pool-container').classList.toggle('warning', remChar < 0);
+
+    let totalCr = state.cr.z + state.cr.w;
+    document.getElementById('cr-input').value = totalCr;
+    document.getElementById('cr-z').textContent = state.cr.z;
+    document.getElementById('cr-w').textContent = state.cr.w;
+    document.getElementById('cr-meta').textContent = `Wymagane: ${state.crReq[0]} - ${state.crReq[1]}`;
+    document.getElementById('cr-input').classList.toggle('warning', (totalCr < state.crReq[0] || totalCr > state.crReq[1]));
+
+    state.maxOccPoints = evalOccFormula(state.activeOccup);
+    const maxSkillPoints = state.chars['int'] * 2;
+    
+    let spentZ = state.cr.z; let spentA = 0; let spentW = state.cr.w;
+    Object.values(state.skills).forEach(s => { spentZ += s.z; spentA += s.a; spentW += s.w; });
+
+    const remZ = maxSkillPoints - spentZ;
+    const remA = state.maxArchPoints - spentA;
+    const remW = state.maxOccPoints - spentW;
+
+    document.getElementById('max-skill-points').textContent = maxSkillPoints;
+    document.getElementById('skill-points').textContent = remZ;
+    document.getElementById('skill-pool-container').classList.toggle('warning', remZ < 0);
+
+    document.getElementById('max-arch-points').textContent = state.activeArchetype !== 'none' ? 100 : 0;
+    document.getElementById('arch-points').textContent = remA;
+    if(state.activeArchetype !== 'none') document.getElementById('arch-pool-container').classList.toggle('warning', remA < 0);
+
+    document.getElementById('max-occ-points').textContent = state.maxOccPoints;
+    document.getElementById('occ-points').textContent = remW;
+    if(state.activeOccup !== 'none') document.getElementById('occ-pool-container').classList.toggle('warning', remW < 0);
+
+    renderSkills();
+  }
+
+  function exportData() {
+    const dataToSave = {
+      chars: state.chars,
+      cr: state.cr,
+      activeArchetype: state.activeArchetype,
+      activeOccup: state.activeOccup,
+      occStatChoice: document.getElementById('occ-stat-select').value,
+      skillsSpent: {}
+    };
+
+    for (let key in state.skills) {
+      if(state.skills[key].z > 0 || state.skills[key].a > 0 || state.skills[key].w > 0) {
+        dataToSave.skillsSpent[key] = {
+          z: state.skills[key].z,
+          a: state.skills[key].a,
+          w: state.skills[key].w
+        };
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pulp_cthulhu_postac.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      try {
+        const data = JSON.parse(event.target.result);
+        
+        if(data.chars) {
+          state.chars = data.chars;
+          for(let id in state.chars) {
+            const input = document.getElementById(id);
+            if(input) input.value = state.chars[id];
+          }
+        }
+
+        document.getElementById('archetype-select').value = data.activeArchetype || 'none';
+        document.getElementById('occup-select').value = data.activeOccup || 'none';
+        handleSelectors(); 
+        
+        if(data.occStatChoice) {
+          document.getElementById('occ-stat-select').value = data.occStatChoice;
+        }
+
+        if(data.cr) state.cr = data.cr;
+        
+        for(let k in state.skills) {
+          state.skills[k].z = 0; state.skills[k].a = 0; state.skills[k].w = 0;
+        }
+
+        if(data.skillsSpent) {
+          for (let key in data.skillsSpent) {
+            if (state.skills[key]) {
+              state.skills[key].z = data.skillsSpent[key].z || 0;
+              state.skills[key].a = data.skillsSpent[key].a || 0;
+              state.skills[key].w = data.skillsSpent[key].w || 0;
+            }
+          }
+        }
+
+        calculateAndRender();
+        
+      } catch(err) {
+        alert('Wystąpił błąd podczas odczytu pliku JSON. Upewnij się, że plik nie jest uszkodzony.');
+        console.error(err);
+      }
+      
+      e.target.value = '';
+    };
+    
+    reader.readAsText(file);
+  }
+
+  document.getElementById('occ-stat-select').addEventListener('change', calculateAndRender);
+  document.getElementById('archetype-select').addEventListener('change', () => { handleSelectors(); document.querySelector('input[value="interest"]').checked = true; });
+  document.getElementById('occup-select').addEventListener('change', () => { handleSelectors(); document.querySelector('input[value="interest"]').checked = true; });
+  document.querySelectorAll('#characteristics-list input').forEach(inp => inp.addEventListener('change', handleCharChange));
+  document.getElementById('cr-input').addEventListener('change', handleCRChange);
+  
+  calculateAndRender();
+</script>
+</body>
+</html>
