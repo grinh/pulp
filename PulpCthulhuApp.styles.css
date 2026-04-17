@@ -75,6 +75,38 @@ select[b-j6fqa93ml9] { width: 100%; padding: 10px; background: #333; color: whit
 .tag-occ[b-j6fqa93ml9] { color: var(--occ-color); font-weight: bold; font-style: normal; }
 
 .input-wrapper[b-j6fqa93ml9] { display: flex; flex-direction: column; align-items: flex-end; }
+
+.wealth-details[b-j6fqa93ml9] {
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #555;
+    font-size: 0.85em;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 15px;
+}
+.wealth-details div[b-j6fqa93ml9] {
+    display: flex;
+    justify-content: space-between;
+}
+.wealth-details span:first-child[b-j6fqa93ml9] {
+    color: #888;
+}
+.wealth-details span:last-child[b-j6fqa93ml9] {
+    color: var(--accent);
+    font-weight: bold;
+}
+.wealth-level[b-j6fqa93ml9] {
+    grid-column: span 2;
+    justify-content: center !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+    color: var(--accent) !important;
+}
+
 input[type="number"][b-j6fqa93ml9] { width: 70px; padding: 6px; background: #1a1a1a; color: white; border: 1px solid #555; border-radius: 4px; font-size: 1.1em; text-align: center;}
 
 .spent-breakdown[b-j6fqa93ml9] { font-size: 0.7em; color: #888; margin-top: 4px; }
